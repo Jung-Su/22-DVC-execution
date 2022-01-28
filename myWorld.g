@@ -1,6 +1,6 @@
-Include: '../../rai-robotModels/scenarios/pandasTable-calibrated.g'
+Include: '../botop/rai-robotModels/scenarios/pandasTable-calibrated.g'
 
-viewCenter(table) { shape:marker, Q:[.4,.2,.1],size:[.1] }
+viewCenter(table) { shape:marker, Q:[.5,.2,.1],size:[.1] }
 
 
 # cupHolder

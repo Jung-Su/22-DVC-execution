@@ -1,4 +1,4 @@
-Include '../../rai-robotModels/scenarios/pandasTable-calibrated.g'
+Include '../botop/rai-robotModels/scenarios/pandasTable-calibrated.g'
 
 ot_cameraCalibrationPlate(optitrack_base) {shape:marker, size:[0.1]}
 cameraClibrationPlateShape(ot_cameraCalibrationPlate) {shape:box, size:[0.193 0.02 0.280], Q:<t(0.0965 0.02 0.140)> }
@@ -8,6 +8,7 @@ cameraClibrationPlateShape2(cameraClibrationPlateShape) {shape:box, size:[0.29 0
 HandStick(optitrack_base) { shape:sphere, size:[.05]}
 HandStick_shape(HandStick){  shape:ssBox , size:[.05 .7 .05 0.001], Q:<t(0 -.35 0)> }
 
+viewCenter(table) { shape:marker, Q:[.5,.2,.1],size:[.1] }
 
 
 

@@ -30,7 +30,7 @@ void moveToPoses(){
   //-- prepare image files
   RealSenseThread RS({}, {});
   cv::Mat rgb, bgr;
-  ofstream fil2("/home/jung-su/GoogleDrive/DVC_experiment/camData.json");
+  ofstream fil2("/home/jung-su/GoogleDrive/DVC_experiment/cameraData.json");
   fil2 <<" { \"intrinsic\": " << K << "," << endl;
   fil2 <<" \"pose\": ["  <<endl;
 
@@ -114,7 +114,7 @@ void moveToPoses(){
 void takePictures(uint numImages, bool onGripper=false){
 
   rai::Configuration C;
-  C.addFile("../../rai-robotModels/scenarios/pandasTable-calibrated.g");
+  C.addFile("../botop/rai-robotModels/scenarios/pandasTable-calibrated.g");
 
   ifstream fil("z.calib.dat");
   arr camPose, K;

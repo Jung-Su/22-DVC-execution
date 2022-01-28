@@ -19,12 +19,9 @@
 
 int CHECKERBOARD[2]{7,9};
 
+#include "cameraCalibration.cpp"
 #include "takePictures.cpp"
 #include "runSolution.cpp"
-
-
-
-
 
 int main(int argc,char **argv){
   rai::initCmdLine(argc,argv);
@@ -35,8 +32,10 @@ int main(int argc,char **argv){
 
   //  takePictures(5, true);
 
+//  moveToPoses_cali();
   moveToPoses();
-  //runSolution();
+//  runSolution(3.);
+//  runSolutionHO();
 
 //  rai::Quaternion R;
 //  R.setRad(RAI_PI, 1, 0, 0);

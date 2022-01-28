@@ -1,5 +1,5 @@
-BASE = ../../rai
-BASE2 = ../../src
+BASE = ../botop/rai
+BASE2 = ../botop/src
 
 #OBJS = main.o ../../bin/bot/bot.o
 

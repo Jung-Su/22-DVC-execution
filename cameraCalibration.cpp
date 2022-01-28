@@ -1,3 +1,11 @@
+#include <BotOp/bot.h>
+
+
+void cvConvertShow(const byteA rgb, const std::string& name){
+  cv::Mat bgr;
+  cv::cvtColor(CV(rgb), bgr, cv::COLOR_RGB2BGR);
+  cv::imshow(name, bgr);
+}
 //===========================================================================
 void moveToPoses_cali(){
   //-- setup a configuration
@@ -19,21 +27,6 @@ void moveToPoses_cali(){
   //-- start a robot thread
   BotOp bot(C, rai::checkParameter<bool>("real"));
   bot.home(C);
-
-  //-- load cam calibration
-  ifstream fil("z.calib.dat");
-  arr camPose, K;
-  for(uint t=0;;t++){
-    rai::skip(fil);
-    if(!fil.good()) break;
-    fil >>PARSE("qCam") >>  camPose >>PARSE("intrinsic") >>K;
-    }
-  fil.close();
-
-  rai::Frame* cameraFrame;
-  cameraFrame = C.addFrame("rs_camera", "r_robotiq_optitrackMarker");
-  cameraFrame->setRelativePosition(camPose.sub(0,2)).setRelativeQuaternion(camPose.sub(3,6)).setShape(rai::ST_marker, {.2});
-  cameraFrame->addRad(RAI_PI, 1, 0, 0); //opencv => gl camera!
 
   //-- prepare image files
   RealSenseThread RS({}, {});
@@ -109,7 +102,7 @@ void moveToPoses_cali(){
     rgb = CV(RS.color.get()).clone();
     cv::cvtColor(rgb, bgr, cv::COLOR_RGB2BGR);
     rai::Transformation TgripperInv;
-    if(onGripper) TgripperInv.setInverse(C["r_robotiq_optitrackMarker"]->get_X());
+    TgripperInv.setInverse(C["r_robotiq_optitrackMarker"]->get_X());
 
     cv::cvtColor(rgb, gray, cv::COLOR_RGB2GRAY);
     std::vector<cv::Point2f> corner_pts;
@@ -135,7 +128,7 @@ void moveToPoses_cali(){
         for(int i{0}; i<CHECKERBOARD[0]; i++){
           rai::String fname = (key&0xff)=='f'?STRING("CBP"<<i<<"_"<<j):STRING("CBP"<<CHECKERBOARD[0]-1-i<<"_"<<CHECKERBOARD[1]-1-j);
           pos = C[fname]->getPosition();
-          if(onGripper) TgripperInv.applyOnPoint(pos);
+          TgripperInv.applyOnPoint(pos);
           objpoints.push_back(cv::Point3f(pos(0),pos(1),pos(2)));
         }
       }
@@ -199,13 +192,9 @@ void moveToPoses_cali(){
   camPose.setAffineMatrix(inverse(P).p);
 
   rai::Frame* cameraFrame;
-  if(onGripper){
-    cameraFrame = C.addFrame("rs_camera", "r_robotiq_optitrackMarker");
-    cameraFrame->setRelativePosition(camPose.pos.getArr()).setRelativeQuaternion(camPose.rot.getArr4d()).setShape(rai::ST_marker, {.2});
-  }else{
-    cameraFrame = C.addFrame("rs_camera");
-    cameraFrame->setPose(camPose).setShape(rai::ST_marker, {.2});
-  }
+  cameraFrame = C.addFrame("rs_camera", "r_robotiq_optitrackMarker");
+  cameraFrame->setRelativePosition(camPose.pos.getArr()).setRelativeQuaternion(camPose.rot.getArr4d()).setShape(rai::ST_marker, {.2});
+
 
   cameraFrame->addRad(RAI_PI, 1, 0, 0); //opencv => gl camera!
 
@@ -231,11 +220,7 @@ void moveToPoses_cali(){
 
   //===========================================================================
 
-void cvConvertShow(const byteA rgb, const std::string& name){
-  cv::Mat bgr;
-  cv::cvtColor(CV(rgb), bgr, cv::COLOR_RGB2BGR);
-  cv::imshow(name, bgr);
-}
+
 
 void addCBPoints(rai::Configuration& C){
   arr orig = {0.0215, .01, 0.0415};
