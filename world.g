@@ -5,8 +5,8 @@ cameraClibrationPlateShape(ot_cameraCalibrationPlate) {shape:box, size:[0.193 0.
 cameraClibrationPlateShape2(cameraClibrationPlateShape) {shape:box, size:[0.29 0.018 0.65] ,color:[0.5, .1, .0]}
 
 
-HandStick(optitrack_base) { shape:sphere, size:[.05]}
-HandStick_shape(HandStick){  shape:ssBox , size:[.05 .7 .05 0.001], Q:<t(0 -.35 0)> }
+HandStick(optitrack_base) { shape:sphere, size:[.0055]}
+HandStick_shape(HandStick){  shape:ssBox , size:[.05 .65 .05 0.001], Q:<t(0 -.35 0)> }
 
 viewCenter(table) { shape:marker, Q:[.5,.2,.1],size:[.1] }
 

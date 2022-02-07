@@ -1,3 +1,12 @@
+#include <Perception/opencv.h> //always include this first! OpenCV headers define stupid macros
+#include <Perception/opencvCamera.h>
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
+#include <BotOp/bot.h>
+//#include "cameraCalibration.cpp"
+
 //===========================================================================
 
 void moveToPoses(){
@@ -12,64 +21,67 @@ void moveToPoses(){
   BotOp bot(C, rai::checkParameter<bool>("real"));
   bot.home(C);
 
-  //-- load cam calibration
-  ifstream fil("z.calib.dat");
-  arr camPose, K;
-  for(uint t=0;;t++){
-    rai::skip(fil);
-    if(!fil.good()) break;
-    fil >>PARSE("qCam") >>  camPose >>PARSE("intrinsic") >>K;
-    }
-  fil.close();
+//  //-- load cam calibration
+//  ifstream fil("z.calib.dat");
+//  arr camPose, K;
+//  for(uint t=0;;t++){
+//    rai::skip(fil);
+//    if(!fil.good()) break;
+//    fil >>PARSE("qCam") >>  camPose >>PARSE("intrinsic") >>K;
+//    }
+//  fil.close();
+
+  cv::Mat K, R, T, distCoeffs;
+
+  cv::FileStorage fs("calib_result.json", cv::FileStorage::READ);
+  fs["K"] >> K;
+  fs["R"] >> R;
+  fs["T"] >> T;
+  fs["distCoeffs"] >> distCoeffs;
+
+
+  arr P(4,4);
+  P.setZero();
+  P(0,0) = R.at<double>(0,0);
+  P(0,1) = R.at<double>(0,1);
+  P(0,2) = R.at<double>(0,2);
+  P(1,0) = R.at<double>(1,0);
+  P(1,1) = R.at<double>(1,1);
+  P(1,2) = R.at<double>(1,2);
+  P(2,0) = R.at<double>(2,0);
+  P(2,1) = R.at<double>(2,1);
+  P(2,2) = R.at<double>(2,2);
+  P(0,3) = T.at<double>(0);
+  P(1,3) = T.at<double>(1);
+  P(2,3) = T.at<double>(2);
+  P(3,3) = 1.;
+
+
+  rai::Transformation camPose;
+  camPose.setAffineMatrix(inverse(P).p);
 
   rai::Frame* cameraFrame;
   cameraFrame = C.addFrame("rs_camera", "r_robotiq_optitrackMarker");
-  cameraFrame->setRelativePosition(camPose.sub(0,2)).setRelativeQuaternion(camPose.sub(3,6)).setShape(rai::ST_marker, {.2});
+  cameraFrame->setRelativePosition(camPose.pos.getArr()).setRelativeQuaternion(camPose.rot.getArr4d()).setShape(rai::ST_marker, {.2});
   cameraFrame->addRad(RAI_PI, 1, 0, 0); //opencv => gl camera!
 
   //-- prepare image files
   RealSenseThread RS({}, {});
-  cv::Mat rgb, bgr;
+  cv::Mat rgb, rgb_undistorted, bgr;
   ofstream fil2("/home/jung-su/GoogleDrive/DVC_experiment/cameraData.json");
   fil2 <<" { \"intrinsic\": " << K << "," << endl;
   fil2 <<" \"pose\": ["  <<endl;
 
   //-- loop through poses
   arr q_last=bot.get_q();
-  uint L = points.d0;
-  for(uint l=0;l<=L;l++){
-    arr q_target;
+  for(uint l=0;l<points.d0;l++){
 
     //compute pose
-    if(l<L){
-      KOMO komo;
-      komo.setModel(C, true);
-      komo.setTiming(1, 1, 3., 1);
-      komo.add_qControlObjective({}, 1, 1e-1);
-      komo.addObjective({}, FS_qItself, {}, OT_sos, {.1}, bot.qHome);
-      komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1});
-
-      arr pt = points[l];
-      komo.addObjective({}, FS_positionDiff, {"r_gripper", "table_base"}, OT_sos, {1e2}, pt);
-      komo.addObjective({}, FS_positionRel, {"viewCenter", "r_gripper"}, OT_sos, {{2,3},{1e1,0,0,0,1e1,0}});
-
-      komo.optimize();
-
-      //is feasible?
-      bool feasible=komo.sos<50. && komo.ineq<.1 && komo.eq<.1;
-
-      if(!feasible){
-        cout <<" === pose infeasible ===\n" <<points[l] <<endl;
-        continue;
-      }
-
-      q_target = komo.x;
-      cout <<" === pose feasible  === " <<endl;
-    }else{
-      q_target = bot.qHome;
+    arr q_target = getShootingPose(C, points[l], bot.qHome);
+    if(!q_target.N){
+      cout <<" === pose infeasible === " <<endl;
+      continue;
     }
-
-    //C.setJointState(q_target);  C.watch(true, "pose");
 
     //compute path
     C.setJointState(q_last);
@@ -96,7 +108,9 @@ void moveToPoses(){
 
     //-- take image
     rgb = CV(RS.color.get()).clone();
-    cv::cvtColor(rgb, bgr, cv::COLOR_RGB2BGR);
+//    cv::cvtColor(rgb, bgr, cv::COLOR_RGB2BGR);
+    cv::undistort(rgb, rgb_undistorted, K, distCoeffs);
+    cv::cvtColor(rgb_undistorted, bgr, cv::COLOR_RGB2BGR);
     cv::imwrite(STRING("/home/jung-su/GoogleDrive/DVC_experiment/img_"<<l<<".png").p, bgr);
     if(l>0) fil2 << "," <<endl;
     fil2 << C["rs_camera"]->getPose() <<endl;
@@ -106,6 +120,7 @@ void moveToPoses(){
   fil2 <<  "]}" <<endl;
   fil2.close();
 
+  bot.home(C);
   rai::wait();
 }
 

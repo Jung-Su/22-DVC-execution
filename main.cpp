@@ -25,24 +25,21 @@ int CHECKERBOARD[2]{7,9};
 
 int main(int argc,char **argv){
   rai::initCmdLine(argc,argv);
+  //  calibrateCamera(3, true);
+    //  takePictures(5, true);
 
 //  testRealSense();
 //  visualizeChessBoard();
-//  calibrateCamera(3, true);
-
-  //  takePictures(5, true);
 
 //  moveToPoses_cali();
-  moveToPoses();
-//  runSolution(3.);
+  checkCalibrationResult();
+
+//  moveToPoses();
+
+//  runSolution(5.);
 //  runSolutionHO();
 
-//  rai::Quaternion R;
-//  R.setRad(RAI_PI, 1, 0, 0);
-//  cout << R.getArr() << endl;
-//  cout << inverse(R.getArr()) << endl;
-
-  LOG(0) <<" === bye bye ===\n used parameters:\n" << rai::getParameters()() <<'\n';
+//  LOG(0) <<" === bye bye ===\n used parameters:\n" << rai::getParameters()() <<'\n';
 
   return 0;
 }
